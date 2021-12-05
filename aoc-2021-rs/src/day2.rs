@@ -51,9 +51,11 @@ impl Direction {
     }
 }
 
+#[derive(Debug)]
 struct Pos {
     horizontal: u32,
     depth: u32,
+    aim: i32,
 }
 
 impl Default for Pos {
@@ -61,12 +63,13 @@ impl Default for Pos {
         Pos {
             horizontal: 0,
             depth: 0,
+            aim: 0,
         }
     }
 }
 
 impl Pos {
-    fn follow_direction(&self, dir: &Direction) -> Self {
+    fn follow_direction_part1(&self, dir: &Direction) -> Self {
         match dir {
             Direction::Forward(x) => Self {
                 horizontal: self.horizontal + x,
@@ -83,8 +86,26 @@ impl Pos {
         }
     }
 
-    fn follow_directions(self, dirs: &[Direction]) -> Self {
-        dirs.iter().fold(self, |acc, dir| acc.follow_direction(dir))
+    fn follow_directions(self, dirs: &[Direction], f: &dyn Fn(Self, &Direction) -> Self) -> Self {
+        dirs.iter().fold(self, |acc, dir| f(acc, dir))
+    }
+
+    fn follow_direction_part2(&self, dir: &Direction) -> Self {
+        match dir {
+            Direction::Forward(x) => Self {
+                horizontal: self.horizontal + x,
+                depth: (self.depth as i32 + self.aim * *x as i32) as u32,
+                ..*self
+            },
+            Direction::Up(d) => Self {
+                aim: self.aim - *d as i32,
+                ..*self
+            },
+            Direction::Down(d) => Self {
+                aim: self.aim + *d as i32,
+                ..*self
+            },
+        }
     }
 }
 
@@ -95,19 +116,22 @@ fn main() -> Result<(), Error> {
     let dirs = Direction::from_lines(&input).map_err(Error::Message)?;
     let result = match opt.part {
         Part::Part1 => part1(&dirs),
-        Part::Part2 => part2(&[]),
+        Part::Part2 => part2(&dirs),
     };
     println!("{}", result);
     Ok(())
 }
 
 fn part1(input: &[Direction]) -> u32 {
-    let end_pos = Pos::default().follow_directions(input);
+    let end_pos =
+        Pos::default().follow_directions(input, &|p: Pos, dir| p.follow_direction_part1(dir));
     end_pos.depth * end_pos.horizontal
 }
 
-fn part2(_input: &[u32]) -> u32 {
-    todo!()
+fn part2(input: &[Direction]) -> u32 {
+    let end_pos =
+        Pos::default().follow_directions(input, &|p: Pos, dir| p.follow_direction_part2(dir));
+    end_pos.depth * end_pos.horizontal
 }
 
 #[cfg(test)]
@@ -143,6 +167,7 @@ forward 2";
 
     #[test]
     fn test_2() {
-        todo!()
+        let dirs = Direction::from_lines(INPUT).expect("should not fail");
+        assert_eq!(part2(&dirs), 900)
     }
 }
