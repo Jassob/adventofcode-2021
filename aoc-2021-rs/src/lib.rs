@@ -4,6 +4,7 @@ use std::{fmt::Display, str::FromStr};
 pub enum Error {
     ReadInput(String, Box<dyn std::error::Error>),
     ParseInput(Box<dyn std::error::Error>),
+    Message(String),
     Todo,
 }
 
@@ -15,7 +16,14 @@ impl Display for Error {
             }
             Self::ParseInput(e) => f.write_str(&format!("failed to parse input file: {}", e)),
             Self::Todo => f.write_str("not done yet"),
+            Self::Message(msg) => f.write_str(msg),
         }
+    }
+}
+
+impl From<&str> for Error {
+    fn from(s: &str) -> Self {
+        Self::Message(s.into())
     }
 }
 
