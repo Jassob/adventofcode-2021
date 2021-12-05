@@ -1,0 +1,51 @@
+use std::fs;
+
+use structopt::StructOpt;
+
+use aoc_2021_rs::{Error, Part};
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "${DAY}", about = "Solve day ${DAY_NUM} of Advent Of Code 2021.")]
+struct Opt {
+    /// Select which part to run (1 or 2)
+    #[structopt(short, long, default_value = "1")]
+    part: Part,
+    /// Select which input file to use
+    #[structopt(short, long, default_value = "data/${DAY}.txt")]
+    input: String,
+}
+
+fn main() -> Result<(), Error> {
+    let opt = Opt::from_args();
+    let input = fs::read_to_string(&opt.input)
+        .map_err(|e| Error::ReadInput(opt.input.clone(), Box::new(e)))?;
+    let result = match opt.part {
+        Part::Part1 => part1(&input),
+        Part::Part2 => part2(&input),
+    };
+    println!("{}", result);
+    Ok(())
+}
+
+fn part1(_input: &str) -> u32 {
+   0
+}
+
+fn part2(_input: &str) -> u32 {
+    0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_1() {
+       todo!()
+    }
+
+    #[test]
+    fn test_2() {
+       todo!()
+    }
+}
