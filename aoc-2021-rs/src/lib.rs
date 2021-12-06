@@ -2,8 +2,8 @@ use std::{fmt::Display, str::FromStr};
 
 #[derive(Debug)]
 pub enum Error {
-    ReadInput(String, Box<dyn std::error::Error>),
-    ParseInput(Box<dyn std::error::Error>),
+    ReadInput(String, Box<dyn std::error::Error + 'static>),
+    ParseInput(Box<dyn std::error::Error + 'static>),
     Message(String),
     Todo,
 }
@@ -27,10 +27,14 @@ impl From<&str> for Error {
     }
 }
 
-pub fn parse_lines_as_nums(s: &str) -> Result<Vec<u32>, Error> {
-    s.lines()
+pub fn parse_lines_as_nums<U: FromStr>(s: &str) -> Result<Vec<U>, Error>
+where
+    U::Err: std::error::Error + 'static,
+{
+    s.trim()
+        .lines()
         .map(|l| l.parse())
-        .collect::<Result<Vec<u32>, _>>()
+        .collect::<Result<Vec<U>, _>>()
         .map_err(|e| Error::ParseInput(Box::new(e)))
 }
 

@@ -20,14 +20,8 @@ fn main() -> Result<(), Error> {
     let input = fs::read_to_string(&opt.input)
         .map_err(|e| Error::ReadInput(opt.input.clone(), Box::new(e)))?;
     let result = match opt.part {
-        Part::Part1 => {
-            let nums = lib::parse_lines_as_nums(&input)?;
-            Ok(part1(&nums))
-        }
-        Part::Part2 => {
-            let nums = lib::parse_lines_as_nums(&input)?;
-            Ok(part2(&nums))
-        }
+        Part::Part1 => lib::parse_lines_as_nums(&input).map(|nums| part1(&nums)),
+        Part::Part2 => lib::parse_lines_as_nums(&input).map(|nums| part2(&nums)),
     }?;
     println!("{}", result);
     Ok(())
