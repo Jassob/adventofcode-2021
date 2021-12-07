@@ -1,4 +1,4 @@
-use std::fs;
+use std::{cmp::Ordering, fs};
 
 use structopt::StructOpt;
 
@@ -21,7 +21,7 @@ fn main() -> Result<(), Error> {
         .map_err(|e| Error::ReadInput(opt.input.clone(), Box::new(e)))?;
     let result = match opt.part {
         Part::Part1 => part1(&input),
-        Part::Part2 => part2(&input),
+        Part::Part2 => part2(&input)?,
     };
     println!("{}", result);
     Ok(())
@@ -56,8 +56,65 @@ fn part1(input: &str) -> u64 {
     gamma * epsilon
 }
 
-fn part2(_input: &str) -> u64 {
-    0
+fn part2(input: &str) -> Result<u64, Error> {
+    let msb_index = input
+        .trim()
+        .lines()
+        .next()
+        .map(|l| l.chars().count() - 1)
+        .ok_or(Error::Message(format!(
+            "could not get first line of {}",
+            input
+        )))?;
+    let nums = input
+        .trim()
+        .lines()
+        .map(|l| u64::from_str_radix(l, 2))
+        .collect::<Result<Vec<u64>, _>>()
+        .map_err(|e| Error::ParseInput(Box::new(e)))?;
+    let oxygen = filter_candidates(nums.clone(), msb_index, |ones, zeros| {
+        match ones.len().cmp(&zeros.len()) {
+            Ordering::Less => zeros,
+            Ordering::Equal => ones,
+            Ordering::Greater => ones,
+        }
+    })
+    .ok_or(Error::Message(
+        "failed to find oxygen generator rating".into(),
+    ))?;
+    let co2 = filter_candidates(nums, msb_index, |ones, zeros| {
+        match ones.len().cmp(&zeros.len()) {
+            Ordering::Less => ones,
+            Ordering::Equal => zeros,
+            Ordering::Greater => zeros,
+        }
+    })
+    .ok_or(Error::Message("failed to find CO2 scrubber rating".into()))?;
+    Ok(oxygen * co2)
+}
+
+fn filter_candidates(
+    candidates: Vec<u64>,
+    bit_index: usize,
+    predicate: fn(Vec<u64>, Vec<u64>) -> Vec<u64>,
+) -> Option<u64> {
+    let (ones, zeros) = candidates
+        .iter()
+        .fold((vec![], vec![]), |(mut ones, mut zeros), num| {
+            let bit_mask = 1 << bit_index;
+            if num & bit_mask > 0 {
+                ones.push(*num);
+            } else {
+                zeros.push(*num);
+            }
+            (ones, zeros)
+        });
+    let new_candidates = predicate(ones, zeros);
+    match new_candidates.len() {
+        0 => filter_candidates(candidates, bit_index - 1, predicate),
+        1 => Some(new_candidates[0]),
+        _ => filter_candidates(new_candidates, bit_index - 1, predicate),
+    }
 }
 
 #[cfg(test)]
@@ -87,6 +144,7 @@ mod tests {
 
     #[test]
     fn test_2() {
-        todo!()
+        let result = part2(INPUT).expect("should not fail");
+        assert_eq!(result, 230);
     }
 }
