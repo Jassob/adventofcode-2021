@@ -19,16 +19,16 @@ fn main() -> Result<(), Error> {
     let opt = Opt::from_args();
     let input = fs::read_to_string(&opt.input)
         .map_err(|e| Error::ReadInput(opt.input.clone(), Box::new(e)))?;
+    let nums: Vec<u64> = lib::parse_str_as_nums(&input)?;
     let result = match opt.part {
-        Part::Part1 => part1(&input)?,
-        Part::Part2 => part2(&input),
-    };
+        Part::Part1 => part1(&nums),
+        Part::Part2 => part2(&nums),
+    }?;
     println!("{}", result);
     Ok(())
 }
 
-fn part1(input: &str) -> Result<u64, Error> {
-    let nums: Vec<u64> = lib::parse_str_as_nums(input)?;
+fn get_closest_distance(nums: &[u64], distance_fn: fn(u64, u64) -> u64) -> Result<u64, Error> {
     let min = nums.iter().min().ok_or(Error::Message(format!(
         "failed to get min value from {:?}",
         nums
@@ -42,7 +42,7 @@ fn part1(input: &str) -> Result<u64, Error> {
     nums.iter().for_each(|n| {
         distances
             .iter_mut()
-            .for_each(|(i, v)| *v += n.max(i) - n.min(i))
+            .for_each(|(i, v)| *v += distance_fn(*n, *i))
     });
     let closest_point = distances
         .iter()
@@ -51,12 +51,18 @@ fn part1(input: &str) -> Result<u64, Error> {
             "failed to get closest horizontal point from {:?}",
             distances
         )))?;
-    // TODO: check distance from every point to every value in field
     Ok(*closest_point.1)
 }
 
-fn part2(_input: &str) -> u64 {
-    0
+fn part1(input: &[u64]) -> Result<u64, Error> {
+    get_closest_distance(input, |p1, p2| p1.max(p2) - p1.min(p2))
+}
+
+fn part2(input: &[u64]) -> Result<u64, Error> {
+    get_closest_distance(input, |p1, p2| {
+        let distance = p1.max(p2) - p1.min(p2);
+        (0..=distance).sum()
+    })
 }
 
 #[cfg(test)]
@@ -67,11 +73,13 @@ mod tests {
 
     #[test]
     fn test_1() {
-        assert_eq!(part1(INPUT).expect("should not fail"), 37)
+        let nums = lib::parse_str_as_nums(INPUT).unwrap();
+        assert_eq!(part1(&nums).expect("should not fail"), 37)
     }
 
     #[test]
     fn test_2() {
-        todo!()
+        let nums = lib::parse_str_as_nums(INPUT).unwrap();
+        assert_eq!(part2(&nums).expect("should not fail"), 168)
     }
 }
