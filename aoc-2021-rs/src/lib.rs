@@ -38,6 +38,17 @@ where
         .map_err(|e| Error::ParseInput(Box::new(e)))
 }
 
+pub fn parse_str_as_nums<U: FromStr>(s: &str) -> Result<Vec<U>, Error>
+where
+    U::Err: std::error::Error + 'static,
+{
+    s.trim()
+        .split(",")
+        .map(|n| n.parse())
+        .collect::<Result<Vec<U>, _>>()
+        .map_err(|e| Error::ParseInput(Box::new(e)))
+}
+
 #[derive(Debug)]
 pub enum Part {
     Part1,
